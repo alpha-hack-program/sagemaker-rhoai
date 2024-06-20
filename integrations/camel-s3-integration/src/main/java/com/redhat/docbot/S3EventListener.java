@@ -51,22 +51,18 @@ public class S3EventListener extends RouteBuilder {
         from("aws2-s3://{{bucket.name}}?deleteAfterRead=true")
             .routeId("s3-event-listener")
             .log("Received S3 event: ${header.CamelAwsS3EventType}")
+            .filter(header("CamelAwsS3Key").endsWith(".onnx"))
+            .setHeader("CamelMinioObjectName", simple("${header.CamelAwsS3Key}")) 
+            .log("Processing file: ${header.CamelMinioObjectName}")
+            .to("minio://{{minio.bucket-name}}?accessKey={{minio.access-key}}&secretKey={{minio.secret-key}}&region={{minio.region}}&endpoint={{minio.endpoint}}")
             .process(exchange -> {
-                String key = exchange.getIn().getHeader(AWS2S3Constants.KEY, String.class);
-                // String bucketName = "{{bucketName}}";
-
                 // Log the S3 object key
+                String key = exchange.getIn().getHeader(AWS2S3Constants.KEY, String.class);
                 log.info("Processing file: " + key + " from bucket: " + bucketName);
 
-                // // Download the file (the file content is in the message body)
-                // byte[] fileContent = exchange.getIn().getBody(byte[].class);
-                // log.info("Downloaded file content: " + new String(fileContent));
-
-                // Check if the file has a .onnx extension
-                if (key.endsWith(".onnx")) {
-                    log.info("Detected .onnx file, triggering deployment rollout");
-                    runPipeline();
-                }
+                // Run the pipeline
+                log.info("Running pipeline: " + pipelineDisplayName);
+                runPipeline();
             });
     }
 
