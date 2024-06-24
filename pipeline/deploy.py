@@ -195,6 +195,9 @@ def pipeline(accuracy_threshold: float = 0.95, no_metrics: bool = True):
             }
         )
 
+    # Print the accuracy
+    print(f"accuracy = {accuracy}")
+
     # Set the S3 keys for get_evaluation_kit_task and kubernetes secret to be used in the task
     get_evaluation_kit_task.set_env_variable(name="EVALUATION_DATA_S3_KEY", value="evaluation_data.pkl")
     get_evaluation_kit_task.set_env_variable(name="SCALER_S3_KEY", value="scaler.pkl")
