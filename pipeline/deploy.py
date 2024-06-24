@@ -1,14 +1,10 @@
 # DOCS: https://www.kubeflow.org/docs/components/pipelines/user-guides/components/ 
 
 import os
-from pyexpat import model
-from re import T
-from typing import no_type_check
 
 from kfp import compiler
 from kfp import dsl
-from kfp.dsl import InputPath, OutputPath
-from kfp.dsl import Input, Output, Dataset, Model, Metrics, PipelineTask
+from kfp.dsl import Input, Output, Dataset, Model, Metrics
 
 from kfp import kubernetes
 
