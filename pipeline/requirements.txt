@@ -1,0 +1,6 @@
+boto3
+botocore
+onnx
+onnxruntime
+kfp
+kfp-runner

@@ -1,4 +1,8 @@
-# camel-s3-integration
+# Camel S3 Integration
+
+The purpose of these intregration is to scan a bucket in AWS S3 to find *.onnx files and move them into a local (on-premise) bucket in a Minio instance. Once this has been done trigger a pipeline run to continue the process.
+
+# Implementation details
 
 This project uses Quarkus, the Supersonic Subatomic Java Framework.
 
