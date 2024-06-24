@@ -50,10 +50,11 @@ public class S3EventListener extends RouteBuilder {
 
     @Override
     public void configure() throws Exception {
+        String evaluationKitFilename = "evaluation_kit.zip";
         from("aws2-s3://{{bucket.name}}?deleteAfterRead=true")
             .routeId("s3-event-listener")
             .log("Received S3 event: ${header.CamelAwsS3EventType}")            
-            .filter(header("CamelAwsS3Key").endsWith(".tgzz"))
+            .filter(header("CamelAwsS3Key").endsWith(evaluationKitFilename))
             .setHeader("CamelMinioObjectName", simple("${header.CamelAwsS3Key}")) 
             .log("Processing file: ${header.CamelMinioObjectName}")
             .to("minio://{{minio.bucket-name}}?accessKey={{minio.access-key}}&secretKey={{minio.secret-key}}&region={{minio.region}}&endpoint={{minio.endpoint}}")
