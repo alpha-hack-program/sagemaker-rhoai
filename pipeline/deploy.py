@@ -205,7 +205,7 @@ def pipeline(accuracy_threshold: float = 0.95, no_metrics: bool = True):
 
     kubernetes.use_secret_as_env(
         task=get_evaluation_kit_task,
-        secret_name='aws-connection-sagemaker',
+        secret_name='aws-connection-model-runtime',
         secret_key_to_env={
             'AWS_ACCESS_KEY_ID': 'AWS_ACCESS_KEY_ID',
             'AWS_SECRET_ACCESS_KEY': 'AWS_SECRET_ACCESS_KEY',

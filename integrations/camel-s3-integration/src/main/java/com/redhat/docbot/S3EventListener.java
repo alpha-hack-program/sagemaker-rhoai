@@ -1,5 +1,6 @@
 package com.redhat.docbot;
 
+import java.util.List;
 import java.util.Optional;
 
 import javax.naming.ConfigurationException;
@@ -8,6 +9,7 @@ import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.core.Response;
+import software.amazon.awssdk.services.s3.model.S3Object;
 
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.aws2.s3.AWS2S3Constants;
@@ -50,8 +52,8 @@ public class S3EventListener extends RouteBuilder {
     public void configure() throws Exception {
         from("aws2-s3://{{bucket.name}}?deleteAfterRead=true")
             .routeId("s3-event-listener")
-            .log("Received S3 event: ${header.CamelAwsS3EventType}")
-            .filter(header("CamelAwsS3Key").endsWith(".onnx"))
+            .log("Received S3 event: ${header.CamelAwsS3EventType}")            
+            .filter(header("CamelAwsS3Key").endsWith(".tgzz"))
             .setHeader("CamelMinioObjectName", simple("${header.CamelAwsS3Key}")) 
             .log("Processing file: ${header.CamelMinioObjectName}")
             .to("minio://{{minio.bucket-name}}?accessKey={{minio.access-key}}&secretKey={{minio.secret-key}}&region={{minio.region}}&endpoint={{minio.endpoint}}")
