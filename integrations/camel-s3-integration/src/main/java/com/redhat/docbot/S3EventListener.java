@@ -11,6 +11,7 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.core.Response;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
+import org.apache.camel.LoggingLevel;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.aws2.s3.AWS2S3Constants;
 
@@ -51,9 +52,9 @@ public class S3EventListener extends RouteBuilder {
     @Override
     public void configure() throws Exception {
         String evaluationKitFilename = "evaluation_kit.zip";
-        from("aws2-s3://{{bucket.name}}?deleteAfterRead=true")
+        from("aws2-s3://{{bucket.name}}?deleteAfterRead=false")
             .routeId("s3-event-listener")
-            .log("Received S3 event: ${header.CamelAwsS3EventType}")            
+            .log(LoggingLevel.DEBUG, "Received S3 event: ${header.CamelAwsS3EventType}")            
             .filter(header("CamelAwsS3Key").endsWith(evaluationKitFilename))
             .setHeader("CamelMinioObjectName", simple("${header.CamelAwsS3Key}")) 
             .log("Processing file: ${header.CamelMinioObjectName}")
@@ -66,7 +67,11 @@ public class S3EventListener extends RouteBuilder {
                 // Run the pipeline
                 log.info("Running pipeline: " + pipelineDisplayName);
                 runPipeline();
-            });
+            })
+            .log("File processed: ${header.CamelMinioObjectName}") // delete the file
+            .to("aws2-s3://{{bucket.name}}?operation=deleteObject")
+            .log("File deleted: ${header.CamelMinioObjectName}")
+            .end();
     }
 
     private void fetchPipelineId() {
