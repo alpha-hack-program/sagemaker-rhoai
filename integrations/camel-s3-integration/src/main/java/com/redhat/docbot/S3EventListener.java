@@ -1,16 +1,10 @@
 package com.redhat.docbot;
 
-import java.util.List;
 import java.util.Optional;
 
-import javax.naming.ConfigurationException;
-
-import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.core.Response;
-import software.amazon.awssdk.services.s3.model.S3Object;
-
 import org.apache.camel.LoggingLevel;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.aws2.s3.AWS2S3Constants;
@@ -21,52 +15,41 @@ import org.eclipse.microprofile.rest.client.inject.RestClient;
 @ApplicationScoped 
 public class S3EventListener extends RouteBuilder {
 
-    @Inject
     @ConfigProperty(name = "bucket.name")
     String bucketName;
 
-    @Inject
     @ConfigProperty(name = "kfp.pipeline.namespace")
     String kfpNamespace;
 
-    @Inject
     @ConfigProperty(name = "kfp.pipeline.display-name")
     String pipelineDisplayName;
+
+    @ConfigProperty(name = "evaluation-kit.filename")
+    String evaluationKitFilename;
 
     @Inject
     @RestClient
     KubeflowPipelineClient kfpClient;
 
-    private String pipelineId;
-
-    @PostConstruct
-    void init() throws ConfigurationException {
-        try {
-            fetchPipelineId();
-        } catch (Exception e) {
-            log.error("Failed to fetch pipeline ID", e);
-            throw new ConfigurationException("Failed to fetch pipeline ID");
-        }
-    }
-
     @Override
     public void configure() throws Exception {
-        String evaluationKitFilename = "evaluation_kit.zip";
         from("aws2-s3://{{bucket.name}}?deleteAfterRead=false")
             .routeId("s3-event-listener")
             .log(LoggingLevel.DEBUG, "Received S3 event: ${header.CamelAwsS3EventType}")            
-            .filter(header("CamelAwsS3Key").endsWith(evaluationKitFilename))
+            .filter(header(AWS2S3Constants.KEY).endsWith(evaluationKitFilename))
             .setHeader("CamelMinioObjectName", simple("${header.CamelAwsS3Key}")) 
             .log("Processing file: ${header.CamelMinioObjectName}")
-            .to("minio://{{minio.bucket-name}}?accessKey={{minio.access-key}}&secretKey={{minio.secret-key}}&region={{minio.region}}&endpoint={{minio.endpoint}}")
+            .to("minio://{{minio.bucket-name}}?accessKey={{minio.access-key}}&secretKey={{minio.secret-key}}&region={{minio.region}}&endpoint={{minio.endpoint}}&autoCreateBucket=true")
             .process(exchange -> {
                 // Log the S3 object key
                 String key = exchange.getIn().getHeader(AWS2S3Constants.KEY, String.class);
                 log.info("Processing file: " + key + " from bucket: " + bucketName);
 
                 // Run the pipeline
-                log.info("Running pipeline: " + pipelineDisplayName);
-                runPipeline();
+                String pipelineId = fetchPipelineId();
+                log.info("Running pipeline: " + pipelineId + " for display name " + pipelineDisplayName);
+                String result = runPipeline(pipelineId);
+                log.info("Pipeline Run: " + result);
             })
             .log("File processed: ${header.CamelMinioObjectName}") // delete the file
             .to("aws2-s3://{{bucket.name}}?operation=deleteObject")
@@ -74,7 +57,7 @@ public class S3EventListener extends RouteBuilder {
             .end();
     }
 
-    private void fetchPipelineId() {
+    private String fetchPipelineId() {
         Response response = kfpClient.getPipelines();
         if (response.getStatus() != 200) {
             throw new RuntimeException("Failed to fetch pipelines from Kubeflow");
@@ -86,15 +69,17 @@ public class S3EventListener extends RouteBuilder {
             .filter(p -> pipelineDisplayName.equals(p.getDisplayName()))
             .findFirst();
 
+        String pipelineId = null;
         if (pipelineOpt.isPresent()) {
-            this.pipelineId = pipelineOpt.get().getPipelineId();
-            log.info("Pipeline ID for display name " + pipelineDisplayName + ": " + this.pipelineId);
+            pipelineId = pipelineOpt.get().getPipelineId();
+            log.info("Pipeline ID for display name " + pipelineDisplayName + ": " + pipelineId);
         } else {
             throw new RuntimeException("Pipeline with display name " + pipelineDisplayName + " not found");
         }
+        return pipelineId;
     }
 
-    private void runPipeline() {
+    private String runPipeline(String pipelineId) {
         PipelineSpec pipelineSpec = new PipelineSpec();
         pipelineSpec.setDisplayName(pipelineDisplayName + "_run");
         pipelineSpec.setDescription("This is run from Camel route");
@@ -102,15 +87,14 @@ public class S3EventListener extends RouteBuilder {
         // runtimeConfig.setParameters(Map.of("param1", "value1"));
         pipelineSpec.setRuntimeConfig(runtimeConfig);
         PipelineVersionReference pipelineVersionReference = new PipelineVersionReference();
-        pipelineVersionReference.setPipelineId(this.pipelineId);
+        pipelineVersionReference.setPipelineId(pipelineId);
         pipelineSpec.setPipelineVersionReference(pipelineVersionReference);
 
         Response response = kfpClient.runPipeline(pipelineSpec);
         if (response.getStatus() != 200) {
-            throw new RuntimeException("Failed to run pipeline " + this.pipelineId + " in Kubeflow");
+            throw new RuntimeException("Failed to run pipeline " + pipelineId + " in Kubeflow");
         }
 
-        String stringResponse = response.readEntity(String.class);
-        log.info("Pipeline Run: " +stringResponse);
+        return response.readEntity(String.class);
     }
 }

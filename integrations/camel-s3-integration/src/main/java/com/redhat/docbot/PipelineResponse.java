@@ -1,9 +1,10 @@
 package com.redhat.docbot;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class PipelineResponse {
-    private List<Pipeline> pipelines;
+    private List<Pipeline> pipelines = new ArrayList<Pipeline>();
     private int totalSize;
 
     // Getters and setters
