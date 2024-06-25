@@ -8,6 +8,7 @@ import jakarta.ws.rs.core.Response;
 import org.apache.camel.LoggingLevel;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.aws2.s3.AWS2S3Constants;
+import org.apache.camel.component.minio.MinioConstants;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
@@ -37,7 +38,7 @@ public class S3EventListener extends RouteBuilder {
             .routeId("s3-event-listener")
             .log(LoggingLevel.DEBUG, "Received S3 event: ${header.CamelAwsS3EventType}")            
             .filter(header(AWS2S3Constants.KEY).endsWith(evaluationKitFilename))
-            .setHeader("CamelMinioObjectName", simple("${header.CamelAwsS3Key}")) 
+            .setHeader(MinioConstants.OBJECT_NAME, simple("${header.CamelAwsS3Key}")) 
             .log("Processing file: ${header.CamelMinioObjectName}")
             .to("minio://{{minio.bucket-name}}?accessKey={{minio.access-key}}&secretKey={{minio.secret-key}}&region={{minio.region}}&endpoint={{minio.endpoint}}&autoCreateBucket=true")
             .process(exchange -> {
