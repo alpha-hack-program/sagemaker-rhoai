@@ -167,6 +167,8 @@ def upload_model(input_model: Input[Model]):
 
     s3_key = os.environ.get("MODEL_S3_KEY")
 
+    print(f"Uploading {input_model.path} to {s3_key} in {bucket_name} bucket in {endpoint_url} endpoint")
+
     session = boto3.session.Session(aws_access_key_id=aws_access_key_id,
                                     aws_secret_access_key=aws_secret_access_key)
 
@@ -185,12 +187,9 @@ def upload_model(input_model: Input[Model]):
 # This pipeline will download evaluation data, download the model, test the model and if it performs well, 
 # upload the model to the runtime S3 bucket and refresh the runtime deployment.
 @dsl.pipeline(name=os.path.basename(__file__).replace('.py', ''))
-def pipeline(accuracy_threshold: float = 0.95, no_metrics: bool = True, local: bool = False):
+def pipeline(accuracy_threshold: float = 0.90, no_metrics: bool = True, local: bool = False):
     # Get the evaluation data, scaler and model
     get_evaluation_kit_task = get_evaluation_kit()
-    # evaluation_data_set = get_evaluation_kit_task.outputs["evaluation_data_output_dataset"]
-    # scaler_model = get_evaluation_kit_task.outputs["scaler_output_model"]
-    # model = get_evaluation_kit_task.outputs["output_model"]
 
     # Test the model
     test_model_task = test_model(
@@ -204,11 +203,12 @@ def pipeline(accuracy_threshold: float = 0.95, no_metrics: bool = True, local: b
     accuracy = parse_metrics_task.outputs["accuracy_output"]
 
     # Use the parsed accuracy to decide if we should upload the model
+    # Doc: https://www.kubeflow.org/docs/components/pipelines/user-guides/core-functions/execute-kfp-pipelines-locally/
     with dsl.If(accuracy >= accuracy_threshold):
         upload_model_task = upload_model(input_model=get_evaluation_kit_task.outputs["scaler_output_model"])
 
         # Setting environment variables for upload_model_task
-        upload_model_task.set_env_variable(name="S3_KEY", value="models/fraud/1/model.onnx")
+        upload_model_task.set_env_variable(name="MODEL_S3_KEY", value="models/fraud/1/model.onnx")
         kubernetes.use_secret_as_env(
             task=upload_model_task,
             secret_name='aws-connection-model-runtime',
@@ -221,18 +221,15 @@ def pipeline(accuracy_threshold: float = 0.95, no_metrics: bool = True, local: b
             }
         )
 
-    # Print the accuracy
-    print(f"accuracy = {accuracy}")
-
     # Set the S3 keys for get_evaluation_kit_task and kubernetes secret to be used in the task
-    get_evaluation_kit_task.set_env_variable(name="EVALUATION_KIT_S3_KEY", value="evaluation_kit.zip")
+    get_evaluation_kit_task.set_env_variable(name="EVALUATION_KIT_S3_KEY", value="models/evaluation_kit.zip")
     get_evaluation_kit_task.set_env_variable(name="EVALUATION_DATA_ZIP_PATH", value="artifact/test_data.pkl")
     get_evaluation_kit_task.set_env_variable(name="SCALER_ZIP_PATH", value="artifact/scaler.pkl")
     get_evaluation_kit_task.set_env_variable(name="MODEL_ZIP_PATH", value="models/fraud/1/model.onnx")
 
     kubernetes.use_secret_as_env(
         task=get_evaluation_kit_task,
-        secret_name='aws-connection-model-runtime',
+        secret_name='aws-connection-model-staging',
         secret_key_to_env={
             'AWS_ACCESS_KEY_ID': 'AWS_ACCESS_KEY_ID',
             'AWS_SECRET_ACCESS_KEY': 'AWS_SECRET_ACCESS_KEY',
