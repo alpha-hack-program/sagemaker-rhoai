@@ -1,5 +1,6 @@
 # DOCS: https://www.kubeflow.org/docs/components/pipelines/user-guides/components/ 
 
+from gc import enable
 import os
 
 from kfp import compiler
@@ -26,7 +27,7 @@ from kfp import kubernetes
 def get_evaluation_kit(
     evaluation_data_output_dataset: Output[Dataset],
     scaler_output_model: Output[Model],
-    output_model: Output[Model]
+    model_output_model: Output[Model]
 ):
     import boto3
     import botocore
@@ -84,8 +85,8 @@ def get_evaluation_kit(
     print(f"Extracted {local_file_path} in {extraction_dir}")
 
      # Copy the evaluation evaluation_kit/model.onnx to the model output path
-    print(f"Copying {extraction_dir}/{model_zip_path} to {output_model.path}")
-    shutil.copy(f'{extraction_dir}/{model_zip_path}', output_model.path)
+    print(f"Copying {extraction_dir}/{model_zip_path} to {model_output_model.path}")
+    shutil.copy(f'{extraction_dir}/{model_zip_path}', model_output_model.path)
     
     # Copy the evaluation evaluation_kit/scaler.pkl to the scaler output path
     print(f"Copying {extraction_dir}/{scaler_zip_path} to {scaler_output_model.path}")
@@ -128,13 +129,7 @@ def test_model(
 
     results_output_metrics.log_metric("accuracy", accuracy)
 
-# This component parses metrics and returns the accuracy
-# @dsl.component(
-#     base_image="quay.io/modh/runtime-images:runtime-cuda-tensorflow-ubi9-python-3.9-2023b-20240301"
-# )
-# def parse_metrics(metrics_input: Input[Metrics], accuracy_output: Output[float]):
-#     accuracy = metrics_input.get_metric("accuracy")
-#     accuracy_output.write(accuracy)
+# This component parses the metrics and extracts the accuracy
 @dsl.component(
     base_image="quay.io/modh/runtime-images:runtime-cuda-tensorflow-ubi9-python-3.9-2023b-20240301"
 )
@@ -187,25 +182,25 @@ def upload_model(input_model: Input[Model]):
 # This pipeline will download evaluation data, download the model, test the model and if it performs well, 
 # upload the model to the runtime S3 bucket and refresh the runtime deployment.
 @dsl.pipeline(name=os.path.basename(__file__).replace('.py', ''))
-def pipeline(accuracy_threshold: float = 0.90, no_metrics: bool = True, local: bool = False):
+def pipeline(accuracy_threshold: float = 0.90,  enable_caching: bool = False):
     # Get the evaluation data, scaler and model
-    get_evaluation_kit_task = get_evaluation_kit()
+    get_evaluation_kit_task = get_evaluation_kit().set_caching_options(False)
 
     # Test the model
     test_model_task = test_model(
         evaluation_data_input_dataset=get_evaluation_kit_task.outputs["evaluation_data_output_dataset"],
         scaler_input_model=get_evaluation_kit_task.outputs["scaler_output_model"], 
-        model_input_model=get_evaluation_kit_task.outputs["output_model"]
-    ).after(get_evaluation_kit_task)
+        model_input_model=get_evaluation_kit_task.outputs["model_output_model"]
+    ).after(get_evaluation_kit_task).set_caching_options(False)
 
     # Parse the metrics and extract the accuracy
-    parse_metrics_task = parse_metrics(metrics_input=test_model_task.outputs["results_output_metrics"])
+    parse_metrics_task = parse_metrics(metrics_input=test_model_task.outputs["results_output_metrics"]).after(test_model_task).set_caching_options(False)
     accuracy = parse_metrics_task.outputs["accuracy_output"]
 
     # Use the parsed accuracy to decide if we should upload the model
     # Doc: https://www.kubeflow.org/docs/components/pipelines/user-guides/core-functions/execute-kfp-pipelines-locally/
     with dsl.If(accuracy >= accuracy_threshold):
-        upload_model_task = upload_model(input_model=get_evaluation_kit_task.outputs["scaler_output_model"]).after(test_model_task)
+        upload_model_task = upload_model(input_model=get_evaluation_kit_task.outputs["model_output_model"]).after(test_model_task).set_caching_options(False)
 
         # Setting environment variables for upload_model_task
         upload_model_task.set_env_variable(name="MODEL_S3_KEY", value="models/fraud/1/model.onnx")
