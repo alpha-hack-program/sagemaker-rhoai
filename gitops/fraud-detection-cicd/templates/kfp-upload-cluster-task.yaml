@@ -59,6 +59,40 @@ spec:
 
         echo "PATH TO $(params.PIPELINE_NAME).yaml"
         ls -lstrh $(params.PIPELINE_NAME).yaml
+    - image: $(params.TASK_IMAGE)
+      name: upload
+      resources: {}
+      workingDir: $(workspaces.source.path)
+      env:
+        - name: PIPELINE_NAME
+          value: $(params.PIPELINE_NAME)
+        - name: PIPELINES_PATH
+          value: $(params.PIPELINES_PATH)
+      script: |
+        #!/bin/sh
+
+        pwd
+
+        ls -lstrh
+
+        cd $(PIPELINES_PATH)
+
+        echo "PATH TO $(params.PIPELINE_NAME).yaml"
+        ls -lstrh $(params.PIPELINE_NAME).yaml
+
+        # Upload the pipeline
+        export NAMESPACE_NAME="$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)"
+        export PIPELINE_NAME="$(params.PIPELINE_NAME)-model"
+
+        export SVC_HOST=ds-pipeline-dspa:8080
+        export SVC="http://${SVC_HOST}"
+
+        export AUTH_HEADER="Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)"
+
+        curl -X POST \
+          -H "Authorization: ${AUTH_HEADER}" \
+          -F "uploadfile=@./$(params.PIPELINE_NAME).yaml" \
+          ${SVC}/apis/v2beta1/pipelines/upload
   workspaces:
     - mountPath: /workspace/source
       name: source
