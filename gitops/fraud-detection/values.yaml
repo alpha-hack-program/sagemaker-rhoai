@@ -63,8 +63,8 @@ pipelines:
     awsS3Endpoint: minio.ic-shared-minio.svc:9000
 
 workbench:
-  name: fraud-detection
-  displayName: Fraud Detection
+  name: fraud-detection-workbench
+  displayName: Fraud Detection Workbench
   image:
     name: tensorflow:2024.1
     displayName: TensorFlow
