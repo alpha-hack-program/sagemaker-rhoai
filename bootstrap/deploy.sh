@@ -8,7 +8,7 @@ cat <<EOF | kubectl apply -f -
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: fraud-detection
+  name: ${INSTANCE_NAME}
   namespace: openshift-gitops
   annotations:
     argocd.argoproj.io/compare-options: IgnoreExtraneous
@@ -24,7 +24,7 @@ spec:
     helm:
       parameters:
         - name: instanceName
-          value: "fraud-detection"
+          value: "${INSTANCE_NAME}"
         - name: dataScienceProjectDisplayName
           value: "Project ${DATA_SCIENCE_PROJECT_NAMESPACE}"
         - name: dataScienceProjectNamespace

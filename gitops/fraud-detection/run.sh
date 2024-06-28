@@ -1,5 +1,5 @@
 #!/bin/sh
-ARGOCD_APP_NAME=doc-bot
+ARGOCD_APP_NAME=fraud-detection
 
 # Load environment variables
 . ../../bootstrap/.env

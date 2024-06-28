@@ -34,15 +34,15 @@ spec:
     enableExternalRoute: false
     externalStorage:
       basePath: ''
-      bucket: '{{ .Values.pipelinesConnection.awsS3Bucket}}'
-      host: '{{ .Values.pipelinesConnection.awsS3Endpoint }}'
+      bucket: '{{ .Values.pipelines.connection.awsS3Bucket}}'
+      host: '{{ .Values.pipelines.connection.awsS3Endpoint }}'
       port: ''
-      region: '{{ .Values.pipelinesConnection.awsDefaultRegion }}'
+      region: '{{ .Values.pipelines.connection.awsDefaultRegion }}'
       s3CredentialsSecret:
         accessKey: AWS_ACCESS_KEY_ID
         secretKey: AWS_SECRET_ACCESS_KEY
-        secretName: aws-connection-{{ .Values.pipelinesConnection.name }}
-      scheme: {{ .Values.pipelinesConnection.scheme }}
+        secretName: aws-connection-{{ .Values.pipelines.connection.name }}
+      scheme: {{ .Values.pipelines.connection.scheme }}
   persistenceAgent:
     deploy: true
     numWorkers: 2
