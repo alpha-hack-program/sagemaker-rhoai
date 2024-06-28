@@ -71,10 +71,15 @@ spec:
       script: |
         #!/bin/sh
 
+        echo "Uploading pipeline $(params.PIPELINE_NAME).yaml"
+
+        echo "Current directory"
         pwd
 
+        echo "List files"
         ls -lstrh
 
+        echo "Change directory to $(PIPELINES_PATH)"
         cd $(PIPELINES_PATH)
 
         echo "PATH TO $(params.PIPELINE_NAME).yaml"
