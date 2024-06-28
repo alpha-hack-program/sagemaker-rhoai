@@ -11,5 +11,5 @@ metadata:
   labels:
     argocd.argoproj.io/managed-by: openshift-gitops #argocd instance ns
     kubernetes.io/metadata.name: "{{ .Values.dataScienceProjectNamespace }}"
-    modelmesh-enabled: 'false'
+    modelmesh-enabled: 'true'
     opendatahub.io/dashboard: 'true'

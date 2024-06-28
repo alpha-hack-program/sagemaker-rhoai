@@ -18,7 +18,7 @@ spec:
     server: 'https://kubernetes.default.svc'
     namespace: ${DATA_SCIENCE_PROJECT_NAMESPACE}
   source:
-    path: gitops/fruad-detection
+    path: gitops/fraud-detection
     repoURL: ${REPO_URL}
     targetRevision: main
     helm:
