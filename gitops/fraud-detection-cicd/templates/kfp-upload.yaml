@@ -14,18 +14,13 @@ spec:
       default: "{{ .Values.modelDeploymentUploadTektonPipelineName }}"
     - name: GIT_PROVIDER
       type: string
+      default: github
     - name: GIT_REPO
       type: string
-    - name: GIT_REPO_NAME
-      type: string
+      default: "{{ .Values.application.repoURL }}"
     - name: GIT_REVISION
       type: string
-      default: main
-    - name: GIT_REPO_CONFIG
-      type: string
-    - name: GIT_REVISION_CONFIG
-      type: string
-      default: main
+      default: "{{ .Values.application.targetRevision }}"
     - name: GIT_SSL_VERIFY
       type: string
       default: '{{ .Values.gitSslVerify }}'

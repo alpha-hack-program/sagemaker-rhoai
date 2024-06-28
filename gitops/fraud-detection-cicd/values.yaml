@@ -4,6 +4,8 @@ application:
   targetRevision: main
   namespace: fraud-detection
 
+gitSslVerify: true
+
 instanceName: fraud-detection
 
 dataScienceProjectNamespace: fraud-detection
