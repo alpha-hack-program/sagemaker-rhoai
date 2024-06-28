@@ -47,11 +47,15 @@ spec:
       script: |
         #!/bin/sh
 
+        echo "Compiling pipeline $(params.PIPELINE_NAME).yaml"
+
+        echo "Current directory"
         pwd
 
+        echo "List files"
         ls -lstrh
 
-        cd $(PIPELINES_PATH)
+        cd $(params.PIPELINES_PATH)
 
         pip install -r $(params.REQUIREMENTS_FILE)
 
