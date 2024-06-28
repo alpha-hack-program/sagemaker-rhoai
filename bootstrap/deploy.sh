@@ -3,7 +3,7 @@
 # Load environment variables
 . .env
 
-# Create an ArgoCD application to deploy the helm chart at this repository and path ./gitops/doc-bot
+# Create an ArgoCD application to deploy the helm chart at this repository and path ./gitops/fraud-detection
 cat <<EOF | kubectl apply -f -
 apiVersion: argoproj.io/v1alpha1
 kind: Application

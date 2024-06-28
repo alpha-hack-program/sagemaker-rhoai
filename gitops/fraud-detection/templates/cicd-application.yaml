@@ -12,9 +12,9 @@ spec:
     server: 'https://kubernetes.default.svc'
     namespace: "{{ .Values.dataScienceProjectNamespace }}"
   source:
-    path: "{{ .Values.modelApplication.path }}"
-    repoURL: "{{ .Values.modelApplication.repoURL }}"
-    targetRevision: "{{ .Values.modelApplication.targetRevision }}"
+    path: "{{ .Values.cicdApplication.path }}"
+    repoURL: "{{ .Values.cicdApplication.repoURL }}"
+    targetRevision: "{{ .Values.cicdApplication.targetRevision }}"
     helm:
       parameters:
         - name: createNamespace
