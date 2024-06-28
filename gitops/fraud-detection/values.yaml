@@ -1,6 +1,6 @@
-modelApplication:
+cicdApplication:
   repoURL: https://github.com/alpha-hack-program/sagemaker-rhoai.git
-  path: gitops/model
+  path: gitops/fraud-detection-cicd
   targetRevision: main
 
 dataScienceProjectDisplayName: fraud-detection

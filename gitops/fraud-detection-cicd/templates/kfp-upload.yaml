@@ -1,0 +1,51 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: {{ .Values.modelDeploymentUploadTektonPipelineName }}
+  namespace: {{ .Values.dataScienceProjectNamespace }}
+  labels:
+    app.kubernetes.io/instance: {{ .Values.modelDeploymentUploadTektonPipelineName }}
+    pipeline.openshift.io/runtime: quarkus
+    pipeline.openshift.io/type: knative
+spec:
+  params:
+    - name: APP_NAME
+      type: string
+      default: "{{ .Values.modelDeploymentUploadTektonPipelineName }}"
+    - name: GIT_PROVIDER
+      type: string
+    - name: GIT_REPO
+      type: string
+    - name: GIT_REPO_NAME
+      type: string
+    - name: GIT_REVISION
+      type: string
+      default: main
+    - name: GIT_REPO_CONFIG
+      type: string
+    - name: GIT_REVISION_CONFIG
+      type: string
+      default: main
+    - name: GIT_SSL_VERIFY
+      type: string
+      default: '{{ .Values.gitSslVerify }}'
+  tasks:
+    - name: fetch-repository
+      params:
+        - name: url
+          value: $(params.GIT_REPO)
+        - name: revision
+          value: $(params.GIT_REVISION)
+        - name: deleteExisting
+          value: 'true'
+        - name: sslVerify
+          value: $(params.GIT_SSL_VERIFY)
+      taskRef:
+        kind: ClusterTask
+        name: git-clone
+      workspaces:
+        - name: output
+          workspace: workspace-source
+  workspaces:
+    - name: workspace-source
+

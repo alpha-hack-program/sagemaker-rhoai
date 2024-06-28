@@ -1,0 +1,14 @@
+application:
+  repoURL: https://github.com/alpha-hack-program/sagemaker-rhoai.git
+  path: gitops/fraud-cicd
+  targetRevision: main
+  namespace: fraud-detection
+
+instanceName: fraud-detection
+
+dataScienceProjectNamespace: fraud-detection
+
+modelDeploymentUploadTektonPipelineName: fraud-detection-kfp-upload
+
+
+  
