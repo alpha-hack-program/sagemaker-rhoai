@@ -42,6 +42,8 @@ spec:
         - name: output
           workspace: workspace-source
     - name: kfp-upload
+      runAfter:
+        - fetch-repository
       params:
         - name: TASK_IMAGE
           value: quay.io/modh/runtime-images:runtime-cuda-tensorflow-ubi9-python-3.9-2023b-20240301
