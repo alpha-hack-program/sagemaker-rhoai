@@ -1,0 +1,51 @@
+---
+apiVersion: datasciencepipelinesapplications.opendatahub.io/v1alpha1
+kind: DataSciencePipelinesApplication
+metadata:
+  name: dspa
+  namespace: {{ .Values.dataScienceProjectNamespace }}
+  annotations:
+    argocd.argoproj.io/compare-options: IgnoreExtraneous
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  apiServer:
+    stripEOF: true
+    dbConfigConMaxLifetimeSec: 120
+    applyTektonCustomResource: true
+    deploy: true
+    enableSamplePipeline: false
+    autoUpdatePipelineDefaultVersion: true
+    archiveLogs: false
+    terminateStatus: Cancelled
+    enableOauth: true
+    trackArtifacts: true
+    collectMetrics: true
+    injectDefaultScript: true
+  database:
+    disableHealthCheck: false
+    mariaDB:
+      deploy: true
+      pipelineDBName: mlpipeline
+      pvcSize: 10Gi
+      username: mlpipeline
+  dspVersion: v2
+  objectStorage:
+    disableHealthCheck: false
+    enableExternalRoute: false
+    externalStorage:
+      basePath: ''
+      bucket: '{{ .Values.pipelinesConnection.awsS3Bucket}}'
+      host: '{{ .Values.pipelinesConnection.awsS3Endpoint }}'
+      port: ''
+      region: '{{ .Values.pipelinesConnection.awsDefaultRegion }}'
+      s3CredentialsSecret:
+        accessKey: AWS_ACCESS_KEY_ID
+        secretKey: AWS_SECRET_ACCESS_KEY
+        secretName: aws-connection-{{ .Values.pipelinesConnection.name }}
+      scheme: {{ .Values.pipelinesConnection.scheme }}
+  persistenceAgent:
+    deploy: true
+    numWorkers: 2
+  scheduledWorkflow:
+    cronScheduleTimezone: UTC
+    deploy: true

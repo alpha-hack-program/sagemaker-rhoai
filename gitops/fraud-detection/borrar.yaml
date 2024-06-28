@@ -1,0 +1,226 @@
+---
+# Source: doc-bot/templates/namespace.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: "fraud-detection-v2"
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1" # Set sync-wave to -1 to avoid conflicts with other resources
+    openshift.io/description: "fraud-detection-v2"
+    openshift.io/display-name: 'fraud-detection-v2'
+  labels:
+    argocd.argoproj.io/managed-by: openshift-gitops #argocd instance ns
+    kubernetes.io/metadata.name: "fraud-detection-v2"
+    modelmesh-enabled: 'false'
+    opendatahub.io/dashboard: 'true'
+---
+# Source: doc-bot/templates/model-runtime-s3-connection.yaml
+kind: Secret
+apiVersion: v1
+metadata:
+  name: aws-connection-model-runtime
+  namespace: fraud-detection-v2
+  labels:
+    opendatahub.io/dashboard: 'true'
+    opendatahub.io/managed: 'true'
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+    opendatahub.io/connection-type: s3
+    openshift.io/display-name: Model Runtime
+stringData:
+  AWS_ACCESS_KEY_ID: minio
+  AWS_SECRET_ACCESS_KEY: minio123
+  AWS_DEFAULT_REGION: none
+  AWS_S3_BUCKET: models
+  AWS_S3_ENDPOINT: http://minio.ic-shared-minio.svc:9000
+  
+type: Opaque
+---
+# Source: doc-bot/templates/model-staging-s3-connection.yaml
+kind: Secret
+apiVersion: v1
+metadata:
+  name: aws-connection-model-staging
+  namespace: fraud-detection-v2
+  labels:
+    opendatahub.io/dashboard: 'true'
+    opendatahub.io/managed: 'true'
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+    opendatahub.io/connection-type: s3
+    openshift.io/display-name: Model Staging
+stringData:
+  AWS_ACCESS_KEY_ID: minio
+  AWS_SECRET_ACCESS_KEY: minio123
+  AWS_DEFAULT_REGION: none
+  AWS_S3_BUCKET: staging
+  AWS_S3_ENDPOINT: http://minio.ic-shared-minio.svc:9000
+  
+type: Opaque
+---
+# Source: doc-bot/templates/pipelines-s3-connection.yaml
+kind: Secret
+apiVersion: v1
+metadata:
+  name: aws-connection-pipelines
+  namespace: fraud-detection-v2
+  labels:
+    opendatahub.io/dashboard: 'true'
+    opendatahub.io/managed: 'true'
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1" # Set sync-wave to -1 to avoid conflicts with other resources
+    opendatahub.io/connection-type: s3
+    openshift.io/display-name: pipelines
+stringData:
+  AWS_ACCESS_KEY_ID: minio
+  AWS_SECRET_ACCESS_KEY: minio123
+  AWS_DEFAULT_REGION: none
+  AWS_S3_BUCKET: pipelines
+  AWS_S3_ENDPOINT: http://minio.ic-shared-minio.svc:9000
+  
+type: Opaque
+---
+# Source: doc-bot/templates/dspa.yaml
+apiVersion: datasciencepipelinesapplications.opendatahub.io/v1alpha1
+kind: DataSciencePipelinesApplication
+metadata:
+  name: dspa
+  namespace: fraud-detection-v2
+  annotations:
+    argocd.argoproj.io/compare-options: IgnoreExtraneous
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  apiServer:
+    stripEOF: true
+    dbConfigConMaxLifetimeSec: 120
+    applyTektonCustomResource: true
+    deploy: true
+    enableSamplePipeline: false
+    autoUpdatePipelineDefaultVersion: true
+    archiveLogs: false
+    terminateStatus: Cancelled
+    enableOauth: true
+    trackArtifacts: true
+    collectMetrics: true
+    injectDefaultScript: true
+  database:
+    disableHealthCheck: false
+    mariaDB:
+      deploy: true
+      pipelineDBName: mlpipeline
+      pvcSize: 10Gi
+      username: mlpipeline
+  dspVersion: v2
+  objectStorage:
+    disableHealthCheck: false
+    enableExternalRoute: false
+    externalStorage:
+      basePath: ''
+      bucket: 'pipelines'
+      host: 'minio.ic-shared-minio.svc:9000'
+      port: ''
+      region: 'none'
+      s3CredentialsSecret:
+        accessKey: AWS_ACCESS_KEY_ID
+        secretKey: AWS_SECRET_ACCESS_KEY
+        secretName: aws-connection-pipelines
+      scheme: http
+  persistenceAgent:
+    deploy: true
+    numWorkers: 2
+  scheduledWorkflow:
+    cronScheduleTimezone: UTC
+    deploy: true
+---
+# Source: doc-bot/templates/model-instance.yaml
+apiVersion: serving.kserve.io/v1beta1
+kind: InferenceService
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+    openshift.io/display-name: "Fraud Detection"
+    serving.kserve.io/deploymentMode: ModelMesh
+  name: fraud-detection
+  namespace: fraud-detection-v2
+  labels:
+    opendatahub.io/dashboard: 'true'
+spec:
+  predictor:
+    model:
+      modelFormat:
+        name: onnx
+        version: '1'
+      name: ''
+      resources: {}
+      runtime: fraud-detection-model-server
+      storage:
+        key: aws-connection-model-runtime
+        path: models/fraud
+---
+# Source: doc-bot/templates/model-instance.yaml
+apiVersion: serving.kserve.io/v1alpha1
+kind: ServingRuntime
+metadata:
+  annotations:
+    enable-route: 'true'
+    opendatahub.io/accelerator-name: ''
+    opendatahub.io/apiProtocol: REST
+    opendatahub.io/recommended-accelerators: '["nvidia.com/gpu"]'
+    opendatahub.io/template-display-name: OpenVINO Model Server
+    opendatahub.io/template-name: ovms
+    openshift.io/display-name: Fraud Detection Model Server
+  name: fraud-detection-model-server
+  namespace: fraud-detection-v2
+  labels:
+    opendatahub.io/dashboard: 'true'
+spec:
+  supportedModelFormats:
+    - autoSelect: true
+      name: openvino_ir
+      version: opset1
+    - autoSelect: true
+      name: onnx
+      version: '1'
+    - autoSelect: true
+      name: tensorflow
+      version: '2'
+  builtInAdapter:
+    env:
+      - name: OVMS_FORCE_TARGET_DEVICE
+        value: AUTO
+    memBufferBytes: 134217728
+    modelLoadingTimeoutMillis: 90000
+    runtimeManagementPort: 8888
+    serverType: ovms
+  multiModel: true
+  containers:
+    - args:
+        - '--port=8001'
+        - '--rest_port=8888'
+        - '--config_path=/models/model_config_list.json'
+        - '--file_system_poll_wait_seconds=0'
+        - '--grpc_bind_address=0.0.0.0'
+        - '--rest_bind_address=0.0.0.0'
+      image: quay.io/modh/openvino_model_server@sha256:6c7795279f9075bebfcd9aecbb4a4ce4177eec41fb3f3e1f1079ce6309b7ae45
+      name: ovms
+      resources:
+        limits:
+          cpu: '2'
+          memory: '8Gi'
+        requests:
+          cpu: '1'
+          memory: '4Gi'
+      volumeMounts:
+        - mountPath: /dev/shm
+          name: shm
+  protocolVersions:
+    - grpc-v1
+  grpcEndpoint: 'port:8085'
+  volumes:
+    - emptyDir:
+        medium: Memory
+        sizeLimit: 2Gi
+      name: shm 
+  replicas: 1
+  tolerations: []
+  grpcDataEndpoint: 'port:8001'
