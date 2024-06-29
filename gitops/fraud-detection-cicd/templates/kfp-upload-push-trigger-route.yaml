@@ -16,8 +16,7 @@ spec:
     name: el-{{ .Values.modelDeploymentUploadTektonPipelineName }}-github
     weight: 100
   tls:
-    termination: reencrypt
-    insecureEdgeTerminationPolicy: Redirect
+    termination: edge
   wildcardPolicy: None
 ---
 apiVersion: route.openshift.io/v1
@@ -38,8 +37,7 @@ spec:
     name: el-{{ .Values.modelDeploymentUploadTektonPipelineName }}-gitea
     weight: 100
   tls:
-    termination: reencrypt
-    insecureEdgeTerminationPolicy: Redirect
+    termination: edge
   wildcardPolicy: None
 ---
 apiVersion: route.openshift.io/v1
@@ -60,6 +58,5 @@ spec:
     name: el-{{ .Values.modelDeploymentUploadTektonPipelineName }}-gitlab
     weight: 100
   tls:
-    termination: reencrypt
-    insecureEdgeTerminationPolicy: Redirect
+    termination: edge
   wildcardPolicy: None
