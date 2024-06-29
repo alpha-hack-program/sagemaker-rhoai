@@ -1,6 +1,7 @@
 # DOCS: https://www.kubeflow.org/docs/components/pipelines/user-guides/components/ 
 
 import os
+import re
 import sys
 
 import kfp
@@ -260,6 +261,16 @@ def get_pipeline_by_name(client: kfp.Client, pipeline_name: str):
 
     return None
 
+# Get the service account token or return None
+def get_token():
+    try:
+        with open("/var/run/secrets/kubernetes.io/serviceaccount/token", "r") as f:
+            return f.read().strip()
+    except Exception as e:
+        print(f"Error: {e}")
+        return None
+
+# Get the route host for the specified route name in the specified namespace
 def get_route_host(route_name: str, namespace: str):
     # Load Kubernetes configuration from default location
     config.load_kube_config()
@@ -300,9 +311,13 @@ if __name__ == '__main__':
         package_path=pipeline_package_path
     )
 
-    # Take kfp_endpoint and token as optional command-line arguments
-    kfp_endpoint = sys.argv[1] if len(sys.argv) > 1 else None
-    token = sys.argv[2] if len(sys.argv) > 2 else None
+    # Take token and kfp_endpoint as optional command-line arguments
+    token = sys.argv[1] if len(sys.argv) > 1 else None
+    kfp_endpoint = sys.argv[2] if len(sys.argv) > 2 else None
+
+    if not token:
+        print("Token endpoint not provided finding it automatically.")
+        token = get_token()
 
     if not kfp_endpoint:
         print("KFP endpoint not provided finding it automatically.")

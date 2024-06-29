@@ -64,12 +64,9 @@ spec:
         export TOKEN="$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)"
         export PIPELINE_NAME="$(params.PIPELINE_NAME)"
 
-        echo "NAMESPACE_NAME: $NAMESPACE_NAME PIPELINE_NAME: $PIPELINE_NAME AUTH_HEADER: $AUTH_HEADER"
+        echo "NAMESPACE_NAME: $NAMESPACE_NAME PIPELINE_NAME: $PIPELINE_NAME TOKEN: $TOKEN"
 
-        export SVC_HOST=ds-pipeline-dspa:8888
-        export SVC="http://${SVC_HOST}"
-
-        python $(params.PIPELINE_NAME).py  ${SVC} ${TOKEN}
+        python $(params.PIPELINE_NAME).py
     # - image: $(params.TASK_IMAGE)
     #   name: upload
     #   resources: {}
