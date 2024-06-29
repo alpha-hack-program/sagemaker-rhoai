@@ -12,5 +12,6 @@ dataScienceProjectNamespace: fraud-detection
 
 modelDeploymentUploadTektonPipelineName: fraud-detection-kfp-upload
 
+sourceWorkspaceSize: 2Gi
 
   
