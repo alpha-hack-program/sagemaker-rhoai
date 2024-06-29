@@ -1,0 +1,25 @@
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: {{ .Values.instanceName }}-s3-integration-bc
+  namespace: "{{ .Values.dataScienceProjectNamespace }}"
+spec:
+  source:
+    type: Git
+    git:
+      uri: '{{ .Values.cicdApplication.repoURL }}'
+      ref: '{{ .Values.cicdApplication.targetRevision }}'
+    contextDir: 'integrations/camel-s3-integration'
+  strategy:
+    type: Docker
+    dockerStrategy:
+      dockerfilePath: 'src/main/docker/Dockerfile.jvm' 
+  output:
+    to:
+      kind: ImageStreamTag
+      name: '{{ .Values.instanceName }}-s3-integration:latest'
+  triggers:
+    - type: ConfigChange
+    - type: ImageChange
+  runPolicy: Serial
