@@ -1,7 +1,7 @@
 apiVersion: triggers.tekton.dev/v1alpha1
 kind: EventListener
 metadata:
-  name: "{{ .Values.modelDeploymentUploadTektonPipelineName }}-github-listener"
+  name: "{{ .Values.modelDeploymentUploadTektonPipelineName }}-github"
   namespace: {{ .Values.dataScienceProjectNamespace }}
 spec:
   serviceAccountName: {{ .Values.pipelinesServiceAccountName }}
@@ -47,7 +47,7 @@ spec:
 apiVersion: triggers.tekton.dev/v1alpha1
 kind: EventListener
 metadata:
-  name: "{{ .Values.modelDeploymentUploadTektonPipelineName }}-gitea-listener"
+  name: "{{ .Values.modelDeploymentUploadTektonPipelineName }}-gitea"
   namespace: {{ .Values.dataScienceProjectNamespace }}
 spec:
   serviceAccountName: {{ .Values.pipelinesServiceAccountName }}
@@ -59,21 +59,9 @@ spec:
             kind: ClusterInterceptor
             apiVersion: triggers.tekton.dev
           params:
-            # - name: secretRef
-            #   value: 
-            #     secretName: {{ .Values.gitPatSecretName }}
-            #     secretKey: {{ .Values.gitPatSecretKey }}
             - name: eventTypes
               value:
                 - push
-        # - github:
-        #     # secretRef:
-        #     #   secretName: github-secret
-        #     #   secretKey: secretToken
-        #     eventTypes:
-        #       - push
-        # - cel:
-        #     filter: "body.action in ['opened', 'synchronize', 'reopened']"
       bindings:
         - kind: TriggerBinding
           ref: "{{ .Values.modelDeploymentUploadTektonPipelineName }}-gitea-trigger-binding"
@@ -105,7 +93,7 @@ spec:
 apiVersion: triggers.tekton.dev/v1alpha1
 kind: EventListener
 metadata:
-  name: "{{ .Values.modelDeploymentUploadTektonPipelineName }}-gitlab-listener"
+  name: "{{ .Values.modelDeploymentUploadTektonPipelineName }}-gitlab"
   namespace: {{ .Values.dataScienceProjectNamespace }}
 spec:
   serviceAccountName: {{ .Values.pipelinesServiceAccountName }}
@@ -117,10 +105,6 @@ spec:
             kind: ClusterInterceptor
             apiVersion: triggers.tekton.dev
           params:
-            # - name: secretRef
-            #   value: 
-            #     secretName: {{ .Values.gitPatSecretName }}
-            #     secretKey: {{ .Values.gitPatSecretKey }}
             - name: eventTypes
               value:
                 - push
