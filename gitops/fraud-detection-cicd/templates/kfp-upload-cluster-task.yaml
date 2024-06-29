@@ -99,10 +99,24 @@ spec:
         export SVC_HOST=ds-pipeline-dspa:8080
         export SVC="http://${SVC_HOST}"
 
-        curl -X POST \
+        # Check if the pipeline already exists
+        curl -X GET \
           -H "Authorization: ${AUTH_HEADER}" \
-          -F "uploadfile=@./$(params.PIPELINE_NAME).yaml" \
-          ${SVC}/apis/v2beta1/pipelines/upload
+          ${SVC}/apis/v2beta1/pipelines/${PIPELINE_NAME} | grep -q "not found"
+
+        if [ $? -eq 1 ]; then
+          # If the pipeline does not exist, upload it
+          curl -X POST \
+            -H "Authorization: ${AUTH_HEADER}" \
+            -F "uploadfile=@./$(params.PIPELINE_NAME).yaml" \
+            ${SVC}/apis/v2beta1/pipelines/upload
+        else
+          # If the pipeline already exists, upload a new version
+          curl -X POST \
+            -H "Authorization: ${AUTH_HEADER}" \
+            -F "uploadfile=@./$(params.PIPELINE_NAME).yaml" \
+            ${SVC}/apis/v2beta1/pipelines/upload_version
+        fi
   workspaces:
     - mountPath: /workspace/source
       name: source
