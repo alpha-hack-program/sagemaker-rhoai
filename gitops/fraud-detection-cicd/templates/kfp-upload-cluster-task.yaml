@@ -83,20 +83,21 @@ spec:
         echo "List files"
         ls -lstrh
 
-        echo "Change directory to $(PIPELINES_PATH)"
-        cd $(PIPELINES_PATH)
+        echo "Change directory to $(params.PIPELINES_PATH)"
+        cd $(params.PIPELINES_PATH)
 
         echo "PATH TO $(params.PIPELINE_NAME).yaml"
         ls -lstrh $(params.PIPELINE_NAME).yaml
 
         # Upload the pipeline
         export NAMESPACE_NAME="$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)"
-        export PIPELINE_NAME="$(params.PIPELINE_NAME)-model"
+        export AUTH_HEADER="Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)"
+        export PIPELINE_NAME="$(params.PIPELINE_NAME)"
+
+        echo "NAMESPACE_NAME: $NAMESPACE_NAME PIPELINE_NAME: $PIPELINE_NAME AUTH_HEADER: $AUTH_HEADER"
 
         export SVC_HOST=ds-pipeline-dspa:8080
         export SVC="http://${SVC_HOST}"
-
-        export AUTH_HEADER="Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)"
 
         curl -X POST \
           -H "Authorization: ${AUTH_HEADER}" \
