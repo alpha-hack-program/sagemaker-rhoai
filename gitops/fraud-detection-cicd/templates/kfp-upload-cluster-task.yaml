@@ -96,7 +96,7 @@ spec:
 
         echo "NAMESPACE_NAME: $NAMESPACE_NAME PIPELINE_NAME: $PIPELINE_NAME AUTH_HEADER: $AUTH_HEADER"
 
-        export SVC_HOST=ds-pipeline-dspa:8080
+        export SVC_HOST=ds-pipeline-dspa:8888
         export SVC="http://${SVC_HOST}"
 
         # Check if the pipeline already exists
