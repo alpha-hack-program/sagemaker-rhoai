@@ -100,17 +100,20 @@ spec:
         export SVC="http://${SVC_HOST}"
 
         # Check if the pipeline already exists
+        echo "Checking if the pipeline already exists using ${SVC}/apis/v2beta1/pipelines/${PIPELINE_NAME}"
         curl -X GET \
           -H "Authorization: ${AUTH_HEADER}" \
           ${SVC}/apis/v2beta1/pipelines/${PIPELINE_NAME} | grep -q "not found"
 
         if [ $? -eq 1 ]; then
+          echo ">>> Pipeline already exists"
           # If the pipeline does not exist, upload it
           curl -X POST \
             -H "Authorization: ${AUTH_HEADER}" \
             -F "uploadfile=@./$(params.PIPELINE_NAME).yaml" \
             ${SVC}/apis/v2beta1/pipelines/upload
         else
+          echo ">>> Pipeline does not exist"
           # If the pipeline already exists, upload a new version
           curl -X POST \
             -H "Authorization: ${AUTH_HEADER}" \
