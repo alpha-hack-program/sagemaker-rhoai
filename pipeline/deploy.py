@@ -271,14 +271,13 @@ def get_token():
         return None
 
 # Get the route host for the specified route name in the specified namespace
-def get_route_host(route_name: str, namespace: str):
+def get_route_host(route_name: str):
     # Load Kubernetes configuration from default location
     config.load_kube_config()
 
     # Get the current namespace
-    if not namespace:
-        with open("/var/run/secrets/kubernetes.io/serviceaccount/namespace", "r") as f:
-            namespace = f.read().strip()
+    with open("/var/run/secrets/kubernetes.io/serviceaccount/namespace", "r") as f:
+        namespace = f.read().strip()
 
     # Create Kubernetes API client
     api_instance = client.CustomObjectsApi()
