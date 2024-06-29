@@ -11,6 +11,8 @@ from kfp.dsl import Input, Output, Dataset, Model, Metrics, OutputPath
 
 from kfp import kubernetes
 
+from kubernetes import client, config
+
 # This component downloads the evaluation data, scaler and model from an S3 bucket and saves it to the correspoding output paths.
 # The connection to the S3 bucket is created using this environment variables:
 # - AWS_ACCESS_KEY_ID
@@ -258,6 +260,36 @@ def get_pipeline_by_name(client: kfp.Client, pipeline_name: str):
 
     return None
 
+def get_route_host(route_name: str, namespace: str):
+    # Load Kubernetes configuration from default location
+    config.load_kube_config()
+
+    # Get the current namespace
+    if not namespace:
+        with open("/var/run/secrets/kubernetes.io/serviceaccount/namespace", "r") as f:
+            namespace = f.read().strip()
+
+    # Create Kubernetes API client
+    api_instance = client.CustomObjectsApi()
+
+    try:
+        # Retrieve the route object
+        route = api_instance.get_namespaced_custom_object(
+            group="route.openshift.io",
+            version="v1",
+            namespace=namespace,
+            plural="routes",
+            name=route_name
+        )
+
+        # Extract spec.host field
+        route_host = route['spec']['host']
+        return route_host
+    
+    except Exception as e:
+        print(f"Error: {e}")
+        return None
+
 if __name__ == '__main__':
     import time
 
@@ -272,12 +304,21 @@ if __name__ == '__main__':
     kfp_endpoint = sys.argv[1] if len(sys.argv) > 1 else None
     token = sys.argv[2] if len(sys.argv) > 2 else None
 
+    if not kfp_endpoint:
+        print("KFP endpoint not provided finding it automatically.")
+        kfp_endpoint = get_route_host(route_name="ds-pipeline-dspa")
+
     # Pipeline name
     pipeline_name = os.path.basename(__file__).replace('.py', '')
 
     # If both kfp_endpoint and token are provided, upload the pipeline
     if kfp_endpoint and token:
         client = kfp.Client(host=kfp_endpoint, existing_token=token)
+
+        # If endpoint doesn't have a protocol (http or https), add https
+        if not kfp_endpoint.startswith("http"):
+            kfp_endpoint = f"https://{kfp_endpoint}"
+
         try:
             # Get the pipeline by name
             print(f"Pipeline name: {pipeline_name}")
