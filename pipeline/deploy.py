@@ -1,7 +1,9 @@
 # DOCS: https://www.kubeflow.org/docs/components/pipelines/user-guides/components/ 
 
-from gc import enable
 import os
+import sys
+
+import kfp
 
 from kfp import compiler
 from kfp import dsl
@@ -233,8 +235,73 @@ def pipeline(accuracy_threshold: float = 0.90,  enable_caching: bool = False):
             'AWS_S3_ENDPOINT': 'AWS_S3_ENDPOINT',
         })
 
+def get_pipeline_by_name(client: kfp.Client, pipeline_name: str):
+    import json
+
+    # Define filter predicates
+    filter_spec = json.dumps({
+        "predicates": [{
+            "key": "display_name",
+            "operation": "EQUALS",
+            "stringValue": pipeline_name,
+        }]
+    })
+
+    # List pipelines with the specified filter
+    pipelines = client.list_pipelines(filter=filter_spec)
+
+    if not pipelines.pipelines:
+        return None
+    for pipeline in pipelines.pipelines:
+        if pipeline.display_name == pipeline_name:
+            return pipeline
+
+    return None
+
 if __name__ == '__main__':
+    import time
+
+    pipeline_package_path = __file__.replace('.py', '.yaml')
+
     compiler.Compiler().compile(
         pipeline_func=pipeline,
-        package_path=__file__.replace('.py', '.yaml')
+        package_path=pipeline_package_path
     )
+
+    # Take kfp_endpoint and token as optional command-line arguments
+    kfp_endpoint = sys.argv[1] if len(sys.argv) > 1 else None
+    token = sys.argv[2] if len(sys.argv) > 2 else None
+
+    # Pipeline name
+    pipeline_name = os.path.basename(__file__).replace('.py', '')
+
+    # If both kfp_endpoint and token are provided, upload the pipeline
+    if kfp_endpoint and token:
+        client = kfp.Client(host=kfp_endpoint, existing_token=token)
+        try:
+            # Get the pipeline by name
+            print(f"Pipeline name: {pipeline_name}")
+            existing_pipeline = get_pipeline_by_name(client, pipeline_name)
+            if existing_pipeline:
+                print(f"Pipeline {existing_pipeline.pipeline_id} already exists. Uploading a new version.")
+                # Upload a new version of the pipeline with a version name equal to the pipeline package path plus a timestamp
+                pipeline_version_name=f"{pipeline_name}-{int(time.time())}"
+                client.upload_pipeline_version(
+                    pipeline_package_path=pipeline_package_path,
+                    pipeline_id=existing_pipeline.pipeline_id,
+                    pipeline_version_name=pipeline_version_name
+                )
+                print(f"Pipeline version uploaded successfully to {kfp_endpoint}")
+            else:
+                print(f"Pipeline {pipeline_name} does not exist. Uploading a new pipeline.")
+                print(f"Pipeline package path: {pipeline_package_path}")
+                # Upload the compiled pipeline
+                client.upload_pipeline(
+                    pipeline_package_path=pipeline_package_path,
+                    pipeline_name=pipeline_name
+                )
+                print(f"Pipeline uploaded successfully to {kfp_endpoint}")
+        except Exception as e:
+            print(f"Failed to upload the pipeline: {e}")
+    else:
+        print("KFP endpoint or token not provided. Skipping pipeline upload.")
