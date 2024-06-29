@@ -5,15 +5,15 @@ metadata:
     app.kubernetes.io/instance: "{{ .Values.instanceName }}"
     app.kubernetes.io/managed-by: EventListener
     app.kubernetes.io/part-of: Triggers
-    eventlistener: "{{ .Values.modelDeploymentUploadTektonPipelineName }}-github-listener"
-  name: el-{{ .Values.modelDeploymentUploadTektonPipelineName }}-github-listener
+    eventlistener: "{{ .Values.modelDeploymentUploadTektonPipelineName }}-github"
+  name: el-{{ .Values.modelDeploymentUploadTektonPipelineName }}-github
   namespace: {{ .Values.dataScienceProjectNamespace }}
 spec:
   port:
     targetPort: http-listener
   to:
     kind: Service
-    name: el-{{ .Values.modelDeploymentUploadTektonPipelineName }}-github-listener
+    name: el-{{ .Values.modelDeploymentUploadTektonPipelineName }}-github
     weight: 100
   wildcardPolicy: None
 ---
@@ -24,15 +24,15 @@ metadata:
     app.kubernetes.io/instance: "{{ .Values.instanceName }}"
     app.kubernetes.io/managed-by: EventListener
     app.kubernetes.io/part-of: Triggers
-    eventlistener: "{{ .Values.modelDeploymentUploadTektonPipelineName }}-gitea-listener"
-  name: el-{{ .Values.modelDeploymentUploadTektonPipelineName }}-gitea-listener
+    eventlistener: "{{ .Values.modelDeploymentUploadTektonPipelineName }}-gitea"
+  name: el-{{ .Values.modelDeploymentUploadTektonPipelineName }}-gitea
   namespace: {{ .Values.dataScienceProjectNamespace }}
 spec:
   port:
     targetPort: http-listener
   to:
     kind: Service
-    name: el-{{ .Values.modelDeploymentUploadTektonPipelineName }}-gitea-listener
+    name: el-{{ .Values.modelDeploymentUploadTektonPipelineName }}-gitea
     weight: 100
   wildcardPolicy: None
 ---
@@ -43,14 +43,14 @@ metadata:
     app.kubernetes.io/instance: "{{ .Values.instanceName }}"
     app.kubernetes.io/managed-by: EventListener
     app.kubernetes.io/part-of: Triggers
-    eventlistener: "{{ .Values.modelDeploymentUploadTektonPipelineName }}-gitlab-listener"
-  name: el-{{ .Values.modelDeploymentUploadTektonPipelineName }}-gitlab-listener
+    eventlistener: "{{ .Values.modelDeploymentUploadTektonPipelineName }}-gitlab"
+  name: el-{{ .Values.modelDeploymentUploadTektonPipelineName }}-gitlab
   namespace: {{ .Values.dataScienceProjectNamespace }}
 spec:
   port:
     targetPort: http-listener
   to:
     kind: Service
-    name: el-{{ .Values.modelDeploymentUploadTektonPipelineName }}-gitlab-listener
+    name: el-{{ .Values.modelDeploymentUploadTektonPipelineName }}-gitlab
     weight: 100
   wildcardPolicy: None
