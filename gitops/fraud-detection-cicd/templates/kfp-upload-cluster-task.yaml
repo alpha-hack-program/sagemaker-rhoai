@@ -100,10 +100,8 @@ spec:
         export SVC="http://${SVC_HOST}"
 
         # Check if the pipeline already exists
-        echo "Checking if the pipeline already exists using ${SVC}/apis/v2beta1/pipelines/${PIPELINE_NAME}"
-        curl -X GET --max-time 2 \
-          -H "Authorization: ${AUTH_HEADER}" \
-          ${SVC}/apis/v2beta1/pipelines
+        echo "Checking if the pipeline already exists using ${SVC}/apis/v2beta1/pipelines"
+        curl -X GET --max-time 2 -H "Authorization: ${AUTH_HEADER}" ${SVC}/apis/v2beta1/pipelines
 
         if [ $? -eq 1 ]; then
           echo ">>> Pipeline already exists"
