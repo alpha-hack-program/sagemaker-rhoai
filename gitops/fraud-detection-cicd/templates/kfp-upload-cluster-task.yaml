@@ -59,39 +59,9 @@ spec:
 
         pip install -r $(params.REQUIREMENTS_FILE)
 
-        python $(params.PIPELINE_NAME).py
-
-        echo "PATH TO $(params.PIPELINE_NAME).yaml"
-        ls -lstrh $(params.PIPELINE_NAME).yaml
-    - image: $(params.TASK_IMAGE)
-      name: upload
-      resources: {}
-      workingDir: $(workspaces.source.path)
-      env:
-        - name: PIPELINE_NAME
-          value: $(params.PIPELINE_NAME)
-        - name: PIPELINES_PATH
-          value: $(params.PIPELINES_PATH)
-      script: |
-        #!/bin/sh
-
-        echo "Uploading pipeline $(params.PIPELINE_NAME).yaml"
-
-        echo "Current directory"
-        pwd
-
-        echo "List files"
-        ls -lstrh
-
-        echo "Change directory to $(params.PIPELINES_PATH)"
-        cd $(params.PIPELINES_PATH)
-
-        echo "PATH TO $(params.PIPELINE_NAME).yaml"
-        ls -lstrh $(params.PIPELINE_NAME).yaml
-
         # Upload the pipeline
         export NAMESPACE_NAME="$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)"
-        export AUTH_HEADER="Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)"
+        export TOKEN="$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)"
         export PIPELINE_NAME="$(params.PIPELINE_NAME)"
 
         echo "NAMESPACE_NAME: $NAMESPACE_NAME PIPELINE_NAME: $PIPELINE_NAME AUTH_HEADER: $AUTH_HEADER"
@@ -99,25 +69,62 @@ spec:
         export SVC_HOST=ds-pipeline-dspa:8888
         export SVC="http://${SVC_HOST}"
 
-        # Check if the pipeline already exists
-        echo "Checking if the pipeline already exists using ${SVC}/apis/v2beta1/pipelines"
-        curl -X GET --max-time 2 -H "Authorization: ${AUTH_HEADER}" ${SVC}/apis/v2beta1/pipelines
+        python $(params.PIPELINE_NAME).py  ${SVC} ${TOKEN}
+    # - image: $(params.TASK_IMAGE)
+    #   name: upload
+    #   resources: {}
+    #   workingDir: $(workspaces.source.path)
+    #   env:
+    #     - name: PIPELINE_NAME
+    #       value: $(params.PIPELINE_NAME)
+    #     - name: PIPELINES_PATH
+    #       value: $(params.PIPELINES_PATH)
+    #   script: |
+    #     #!/bin/sh
 
-        if [ $? -eq 1 ]; then
-          echo ">>> Pipeline already exists"
-          # If the pipeline does not exist, upload it
-          curl -X POST --max-time 5 \
-            -H "Authorization: ${AUTH_HEADER}" \
-            -F "uploadfile=@./$(params.PIPELINE_NAME).yaml" \
-            ${SVC}/apis/v2beta1/pipelines/upload
-        else
-          echo ">>> Pipeline does not exist"
-          # If the pipeline already exists, upload a new version
-          curl -X POST --max-time 5 \
-            -H "Authorization: ${AUTH_HEADER}" \
-            -F "uploadfile=@./$(params.PIPELINE_NAME).yaml" \
-            ${SVC}/apis/v2beta1/pipelines/upload_version
-        fi
+    #     echo "Uploading pipeline $(params.PIPELINE_NAME).yaml"
+
+    #     echo "Current directory"
+    #     pwd
+
+    #     echo "List files"
+    #     ls -lstrh
+
+    #     echo "Change directory to $(params.PIPELINES_PATH)"
+    #     cd $(params.PIPELINES_PATH)
+
+    #     echo "PATH TO $(params.PIPELINE_NAME).yaml"
+    #     ls -lstrh $(params.PIPELINE_NAME).yaml
+
+    #     # Upload the pipeline
+    #     export NAMESPACE_NAME="$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)"
+    #     export AUTH_HEADER="Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)"
+    #     export PIPELINE_NAME="$(params.PIPELINE_NAME)"
+
+    #     echo "NAMESPACE_NAME: $NAMESPACE_NAME PIPELINE_NAME: $PIPELINE_NAME AUTH_HEADER: $AUTH_HEADER"
+
+    #     export SVC_HOST=ds-pipeline-dspa:8888
+    #     export SVC="http://${SVC_HOST}"
+
+    #     # Check if the pipeline already exists
+    #     echo "Checking if the pipeline already exists using ${SVC}/apis/v2beta1/pipelines"
+    #     curl -X GET --max-time 2 -H "Authorization: ${AUTH_HEADER}" ${SVC}/apis/v2beta1/pipelines
+
+    #     if [ $? -eq 1 ]; then
+    #       echo ">>> Pipeline already exists"
+    #       # If the pipeline does not exist, upload it
+    #       curl -X POST --max-time 5 \
+    #         -H "Authorization: ${AUTH_HEADER}" \
+    #         -F "uploadfile=@./$(params.PIPELINE_NAME).yaml" \
+    #         ${SVC}/apis/v2beta1/pipelines/upload
+    #     else
+    #       echo ">>> Pipeline does not exist"
+    #       # If the pipeline already exists, upload a new version
+    #       curl -X POST --max-time 5 \
+    #         -H "Authorization: ${AUTH_HEADER}" \
+    #         -F "uploadfile=@./$(params.PIPELINE_NAME).yaml" \
+    #         ${SVC}/apis/v2beta1/pipelines/upload_version
+    #     fi
   workspaces:
     - mountPath: /workspace/source
       name: source
