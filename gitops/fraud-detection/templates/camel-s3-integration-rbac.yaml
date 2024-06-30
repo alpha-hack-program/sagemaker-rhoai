@@ -19,3 +19,19 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: camel-s3-integration
+---
+# This role binding is used to give the pipeline-admin role to the camel-s3-integration service account
+# TODO: This needs to be adjusted to give only the necessary permissions!!!
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: pipeline-admin
+  namespace: {{ .Values.dataScienceProjectNamespace }}
+subjects:
+  - kind: ServiceAccount
+    name: camel-s3-integration
+    namespace: {{ .Values.dataScienceProjectNamespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: admin
