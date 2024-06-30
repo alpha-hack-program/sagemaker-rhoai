@@ -12,3 +12,4 @@ export AWS_SECRET_ACCESS_KEY="7S.."
 export AWS_REGION="eu-central-1"
 export AWS_S3_BUCKET="sagemaker-models-XYZ"
 ```
+
