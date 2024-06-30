@@ -36,7 +36,7 @@ KFP_PIPELINE_NAMESPACE=${DATA_SCIENCE_PROJECT_NAMESPACE}
 KFP_PIPELINE_DISPLAY_NAME=deploy
 
 # Get the DSPA url from route ds-pipeline-dspa
-DSPA_URL=$(kubectl get route ds-pipeline-dspa -n ${DATA_SCIENCE_PROJECT_NAMESPACE} -o jsonpath='{.spec.host}')
+DSPA_URL=https://$(kubectl get route ds-pipeline-dspa -n ${DATA_SCIENCE_PROJECT_NAMESPACE} -o jsonpath='{.spec.host}')
 
 # Check if DSPA_URL is set
 if [ -z "${DSPA_URL}" ]; then
