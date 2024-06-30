@@ -56,3 +56,64 @@ spec:
       maxSurge: 25%
   revisionHistoryLimit: 10
   progressDeadlineSeconds: 600
+---
+kind: Route
+apiVersion: route.openshift.io/v1
+metadata:
+  name: camel-s3-integration
+  namespace: {{ .Values.dataScienceProjectNamespace }}
+  labels:
+    app: camel-s3-integration
+    app.kubernetes.io/component: camel-s3-integration
+    app.kubernetes.io/instance: camel-s3-integration
+    app.kubernetes.io/name: camel-s3-integration
+    app.kubernetes.io/part-of: camel-integrations
+    app.openshift.io/runtime: java
+    app.openshift.io/runtime-version: openjdk-17-ubi8
+spec:
+  to:
+    kind: Service
+    name: camel-s3-integration
+    weight: 100
+  port:
+    targetPort: 8080-tcp
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
+  wildcardPolicy: None
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: camel-s3-integration
+  namespace: {{ .Values.dataScienceProjectNamespace }}
+  labels:
+    app: camel-s3-integration
+    app.kubernetes.io/component: camel-s3-integration
+    app.kubernetes.io/instance: camel-s3-integration
+    app.kubernetes.io/name: camel-s3-integration
+    app.kubernetes.io/part-of: camel-integrations
+    app.openshift.io/runtime: java
+    app.openshift.io/runtime-version: openjdk-17-ubi8
+  annotations:
+    app.openshift.io/vcs-ref: '{{ .Values.cicdApplication.targetRevision }}'
+    app.openshift.io/vcs-uri: '{{ .Values.cicdApplication.repoURL }}'
+spec:
+  ipFamilies:
+    - IPv4
+  ports:
+    - name: 8080-tcp
+      protocol: TCP
+      port: 8080
+      targetPort: 8080
+    - name: 8443-tcp
+      protocol: TCP
+      port: 8443
+      targetPort: 8443
+  internalTrafficPolicy: Cluster
+  type: ClusterIP
+  ipFamilyPolicy: SingleStack
+  sessionAffinity: None
+  selector:
+    app: camel-s3-integration
+    deployment: camel-s3-integration
