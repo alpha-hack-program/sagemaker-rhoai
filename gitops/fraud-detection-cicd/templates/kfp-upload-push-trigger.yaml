@@ -157,14 +157,14 @@ spec:
       generateName: "{{ .Values.modelDeploymentUploadTektonPipelineName }}-plr-"
       namespace: {{ .Values.dataScienceProjectNamespace }}
       labels:
-        app.kubernetes.io/instance: {{ .Values.kitchensinkServiceName }}
+        app.kubernetes.io/instance: "{{ .Values.instanceName }}"
         pipeline.openshift.io/runtime: quarkus
         pipeline.openshift.io/type: knative
-        tekton.dev/pipeline: {{ .Values.kitchensinkContinuosIntegrationPipeline }}
+        tekton.dev/pipeline: {{ .Values.modelDeploymentUploadTektonPipelineName }}
     spec:
       params:
         - name: APP_NAME
-          value: "{{ .Values.kitchensinkArgoAppBaseName }}"
+          value: "{{ .Values.modelDeploymentUploadTektonPipelineName }}"
         - name: GIT_PROVIDER
           value: $(tt.params.gitProvider)
         - name: GIT_REPO
@@ -173,32 +173,16 @@ spec:
           value: $(tt.params.gitRepository)
         - name: GIT_REVISION
           value: $(tt.params.gitRevision)
-        - name: GIT_REPO_CONFIG
-          value: "{{ .Values.kitchensinkConfRepoUrl }}"
-        - name: GIT_REVISION_CONFIG
-          value: "{{ .Values.kitchensinkConfRevision }}"
-        - name: IMAGE_NAME
-          value: >-
-            {{ .Values.containerRegistryServer }}/{{ .Values.containerRegistryOrg }}/{{ .Values.appName }}-{{ .Values.kitchensinkServiceName }}
         - name: IMAGE_TAG
           value: $(tt.params.gitRevision)
-        - name: PATH_CONTEXT
-          value: .
-        - name: QUARKUS_PROFILE
-          value: prod
-        - name: DB_HOST
-          value: "{{ .Values.kitchensinkServiceName }}-database"
         - name: REVISION_NAME
           value: v1
       pipelineRef:
-        name: {{ .Values.kitchensinkContinuosIntegrationPipeline }}
-      serviceAccountName: {{ .Values.pipelinesServiceAccountName }}
+        name: {{ .Values.modelDeploymentUploadTektonPipelineName }}
+      # serviceAccountName: {{ .Values.pipelinesServiceAccountName }}
       timeout: 1h0m0s
       workspaces:
         - name: workspace-source
           persistentVolumeClaim:
-            claimName: "{{ .Values.kitchensinkServiceName }}-source-pvc"
-        - name: workspace-cache
-          persistentVolumeClaim:
-            claimName: "{{ .Values.kitchensinkServiceName }}-cache-pvc"
+            claimName: "{{ .Values.instanceName }}-source-pvc"
 
