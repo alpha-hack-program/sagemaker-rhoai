@@ -3,6 +3,9 @@ cicdApplication:
   path: gitops/fraud-detection-cicd
   targetRevision: main
 
+genericWebhookSecretKey: 1234567890
+githubWebhookSecretKey: 1234567890
+
 dataScienceProjectDisplayName: fraud-detection
 dataScienceProjectNamespace: fraud-detection
 
