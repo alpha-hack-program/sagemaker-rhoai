@@ -28,6 +28,7 @@ spec:
         app: camel-s3-integration
         deployment: camel-s3-integration
     spec:
+      serviceAccountName: camel-s3-integration
       containers:
         - name: camel-s3-integration
           image: >-
