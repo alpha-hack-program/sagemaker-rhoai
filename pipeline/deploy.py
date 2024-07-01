@@ -188,6 +188,7 @@ def upload_model(input_model: Input[Model]):
     packages_to_install=["kubernetes"]
 )
 def refresh_deployment(deployment_name: str):
+    import datetime
     import kubernetes
 
     # Use the in-cluster config
@@ -206,7 +207,7 @@ def refresh_deployment(deployment_name: str):
             "template": {
                 "metadata": {
                     "annotations": {
-                        "kubectl.kubernetes.io/restartedAt": f"{kubernetes.client.V1ObjectMeta().creation_timestamp}"
+                        "kubectl.kubernetes.io/restartedAt": f"{datetime.datetime.now(datetime.timezone.utc).isoformat()}"
                     }
                 }
             }

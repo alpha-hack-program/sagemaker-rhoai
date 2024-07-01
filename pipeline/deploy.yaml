@@ -244,17 +244,17 @@ deploymentSpec:
 
           '
         - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
-          \ *\n\ndef refresh_deployment(deployment_name: str):\n    import kubernetes\n\
-          \n    # Use the in-cluster config\n    kubernetes.config.load_incluster_config()\n\
+          \ *\n\ndef refresh_deployment(deployment_name: str):\n    import datetime\n\
+          \    import kubernetes\n\n    # Use the in-cluster config\n    kubernetes.config.load_incluster_config()\n\
           \n    # Get the current namespace\n    with open(\"/var/run/secrets/kubernetes.io/serviceaccount/namespace\"\
           , \"r\") as f:\n        namespace = f.read().strip()\n\n    # Create Kubernetes\
           \ API client\n    api_instance = kubernetes.client.CustomObjectsApi()\n\n\
           \    # Define the deployment patch\n    patch = {\n        \"spec\": {\n\
           \            \"template\": {\n                \"metadata\": {\n        \
           \            \"annotations\": {\n                        \"kubectl.kubernetes.io/restartedAt\"\
-          : f\"{kubernetes.client.V1ObjectMeta().creation_timestamp}\"\n         \
-          \           }\n                }\n            }\n        }\n    }\n\n  \
-          \  try:\n        # Patch the deployment\n        api_instance.patch_namespaced_custom_object(\n\
+          : f\"{datetime.datetime.now(datetime.timezone.utc).isoformat()}\"\n    \
+          \                }\n                }\n            }\n        }\n    }\n\
+          \n    try:\n        # Patch the deployment\n        api_instance.patch_namespaced_custom_object(\n\
           \            group=\"apps\",\n            version=\"v1\",\n            namespace=namespace,\n\
           \            plural=\"deployments\",\n            name=deployment_name,\n\
           \            body=patch\n        )\n        print(f\"Deployment {deployment_name}\
