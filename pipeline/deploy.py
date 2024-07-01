@@ -183,11 +183,54 @@ def upload_model(input_model: Input[Model]):
     print(f"Uploading {s3_key}")
     bucket.upload_file(input_model.path, s3_key)
 
+@dsl.component(
+    base_image="quay.io/modh/runtime-images:runtime-cuda-tensorflow-ubi9-python-3.9-2023b-20240301",
+    packages_to_install=["kubernetes"]
+)
+def refresh_deployment(deployment_name: str):
+    import kubernetes
+
+    # Use the in-cluster config
+    kubernetes.config.load_incluster_config()
+
+    # Get the current namespace
+    with open("/var/run/secrets/kubernetes.io/serviceaccount/namespace", "r") as f:
+        namespace = f.read().strip()
+
+    # Create Kubernetes API client
+    api_instance = kubernetes.client.CustomObjectsApi()
+
+    # Define the deployment patch
+    patch = {
+        "spec": {
+            "template": {
+                "metadata": {
+                    "annotations": {
+                        "kubectl.kubernetes.io/restartedAt": f"{kubernetes.client.V1ObjectMeta().creation_timestamp}"
+                    }
+                }
+            }
+        }
+    }
+
+    try:
+        # Patch the deployment
+        api_instance.patch_namespaced_custom_object(
+            group="apps",
+            version="v1",
+            namespace=namespace,
+            plural="deployments",
+            name=deployment_name,
+            body=patch
+        )
+        print(f"Deployment {deployment_name} patched successfully")
+    except Exception as e:
+        print(f"Failed to patch deployment {deployment_name}: {e}")
 
 # This pipeline will download evaluation data, download the model, test the model and if it performs well, 
 # upload the model to the runtime S3 bucket and refresh the runtime deployment.
 @dsl.pipeline(name=os.path.basename(__file__).replace('.py', ''))
-def pipeline(accuracy_threshold: float = 0.90,  enable_caching: bool = False):
+def pipeline(accuracy_threshold: float = 0.95, deployment_name: str = "modelmesh-serving-fraud-detection-model-server",  enable_caching: bool = False):
     # Get the evaluation data, scaler and model
     get_evaluation_kit_task = get_evaluation_kit().set_caching_options(False)
 
@@ -220,6 +263,9 @@ def pipeline(accuracy_threshold: float = 0.90,  enable_caching: bool = False):
                 'AWS_S3_ENDPOINT': 'AWS_S3_ENDPOINT',
             }
         )
+
+        # Refresh the deployment
+        refresh_deployment(deployment_name=deployment_name).after(upload_model_task).set_caching_options(False)
 
     # Set the S3 keys for get_evaluation_kit_task and kubernetes secret to be used in the task
     get_evaluation_kit_task.set_env_variable(name="EVALUATION_KIT_S3_KEY", value="models/evaluation_kit.zip")
@@ -272,8 +318,11 @@ def get_token():
 
 # Get the route host for the specified route name in the specified namespace
 def get_route_host(route_name: str):
-    # Load in-cluster Kubernetes configuration
-    config.load_incluster_config()
+    # Load in-cluster Kubernetes configuration but if it fails, load local configuration
+    try:
+        config.load_incluster_config()
+    except config.config_exception.ConfigException:
+        config.load_kube_config()
 
     # Get the current namespace
     with open("/var/run/secrets/kubernetes.io/serviceaccount/namespace", "r") as f:

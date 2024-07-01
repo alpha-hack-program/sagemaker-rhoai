@@ -1,7 +1,8 @@
 # PIPELINE DEFINITION
 # Name: deploy
 # Inputs:
-#    accuracy_threshold: float [Default: 0.9]
+#    accuracy_threshold: float [Default: 0.95]
+#    deployment_name: str [Default: 'modelmesh-serving-fraud-detection-model-server']
 #    enable_caching: bool [Default: False]
 # Outputs:
 #    test-model-results_output_metrics: system.Metrics
@@ -9,6 +10,18 @@ components:
   comp-condition-1:
     dag:
       tasks:
+        refresh-deployment:
+          cachingOptions: {}
+          componentRef:
+            name: comp-refresh-deployment
+          dependentTasks:
+          - upload-model
+          inputs:
+            parameters:
+              deployment_name:
+                componentInputParameter: pipelinechannel--deployment_name
+          taskInfo:
+            name: refresh-deployment
         upload-model:
           cachingOptions: {}
           componentRef:
@@ -28,6 +41,8 @@ components:
       parameters:
         pipelinechannel--accuracy_threshold:
           parameterType: NUMBER_DOUBLE
+        pipelinechannel--deployment_name:
+          parameterType: STRING
         pipelinechannel--parse-metrics-accuracy_output:
           parameterType: NUMBER_DOUBLE
   comp-get-evaluation-kit:
@@ -58,6 +73,12 @@ components:
       parameters:
         accuracy_output:
           parameterType: NUMBER_DOUBLE
+  comp-refresh-deployment:
+    executorLabel: exec-refresh-deployment
+    inputDefinitions:
+      parameters:
+        deployment_name:
+          parameterType: STRING
   comp-test-model:
     executorLabel: exec-test-model
     inputDefinitions:
@@ -196,6 +217,50 @@ deploymentSpec:
           )\n    accuracy = metrics_input.metadata[\"accuracy\"]\n    with open(accuracy_output,\
           \ 'w') as f:\n        f.write(str(accuracy))\n\n"
         image: quay.io/modh/runtime-images:runtime-cuda-tensorflow-ubi9-python-3.9-2023b-20240301
+    exec-refresh-deployment:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - refresh_deployment
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.8.0'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&\
+          \  python3 -m pip install --quiet --no-warn-script-location 'kubernetes'\
+          \ && \"$0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef refresh_deployment(deployment_name: str):\n    import kubernetes\n\
+          \n    # Use the in-cluster config\n    kubernetes.config.load_incluster_config()\n\
+          \n    # Get the current namespace\n    with open(\"/var/run/secrets/kubernetes.io/serviceaccount/namespace\"\
+          , \"r\") as f:\n        namespace = f.read().strip()\n\n    # Create Kubernetes\
+          \ API client\n    api_instance = kubernetes.client.CustomObjectsApi()\n\n\
+          \    # Define the deployment patch\n    patch = {\n        \"spec\": {\n\
+          \            \"template\": {\n                \"metadata\": {\n        \
+          \            \"annotations\": {\n                        \"kubectl.kubernetes.io/restartedAt\"\
+          : f\"{kubernetes.client.V1ObjectMeta().creation_timestamp}\"\n         \
+          \           }\n                }\n            }\n        }\n    }\n\n  \
+          \  try:\n        # Patch the deployment\n        api_instance.patch_namespaced_custom_object(\n\
+          \            group=\"apps\",\n            version=\"v1\",\n            namespace=namespace,\n\
+          \            plural=\"deployments\",\n            name=deployment_name,\n\
+          \            body=patch\n        )\n        print(f\"Deployment {deployment_name}\
+          \ patched successfully\")\n    except Exception as e:\n        print(f\"\
+          Failed to patch deployment {deployment_name}: {e}\")\n\n"
+        image: quay.io/modh/runtime-images:runtime-cuda-tensorflow-ubi9-python-3.9-2023b-20240301
     exec-test-model:
       container:
         args:
@@ -311,6 +376,8 @@ root:
           parameters:
             pipelinechannel--accuracy_threshold:
               componentInputParameter: accuracy_threshold
+            pipelinechannel--deployment_name:
+              componentInputParameter: deployment_name
             pipelinechannel--parse-metrics-accuracy_output:
               taskOutputParameter:
                 outputParameterKey: accuracy_output
@@ -365,9 +432,13 @@ root:
   inputDefinitions:
     parameters:
       accuracy_threshold:
-        defaultValue: 0.9
+        defaultValue: 0.95
         isOptional: true
         parameterType: NUMBER_DOUBLE
+      deployment_name:
+        defaultValue: modelmesh-serving-fraud-detection-model-server
+        isOptional: true
+        parameterType: STRING
       enable_caching:
         defaultValue: false
         isOptional: true
