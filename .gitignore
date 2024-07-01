@@ -1,5 +1,5 @@
 .*token
-.creds
+.creds*
 tmp
 *.tmp
 .DS_Store
