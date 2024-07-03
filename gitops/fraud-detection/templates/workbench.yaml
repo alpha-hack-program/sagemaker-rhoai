@@ -3,7 +3,7 @@ apiVersion: kubeflow.org/v1
 kind: Notebook
 metadata:
   annotations:
-    argocd.argoproj.io/sync-wave: "100" # Set sync-wave to 100 to wait until the dsp-details secret is created
+    argocd.argoproj.io/sync-wave: "5"
     notebooks.opendatahub.io/inject-oauth: 'true'
     opendatahub.io/image-display-name: '{{ .Values.workbench.image.displayName }}'
     notebooks.opendatahub.io/oauth-logout-url: >-
