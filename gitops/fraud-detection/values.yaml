@@ -2,6 +2,10 @@ vcs:
   uri: https://github.com/alpha-hack-program/sagemaker-rhoai.git
   ref: main
 
+gitSslVerify: true
+modelDeploymentUploadTektonPipelineName: fraud-detection-kfp-upload
+sourceWorkspaceSize: 2Gi
+
 cicdApplication:
   repoURL: https://github.com/alpha-hack-program/sagemaker-rhoai.git
   path: gitops/fraud-detection-cicd
