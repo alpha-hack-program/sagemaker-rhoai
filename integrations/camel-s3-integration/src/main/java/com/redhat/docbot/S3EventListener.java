@@ -83,7 +83,7 @@ public class S3EventListener extends RouteBuilder {
     private String runPipeline(String pipelineId) {
         PipelineSpec pipelineSpec = new PipelineSpec();
         pipelineSpec.setDisplayName(pipelineDisplayName + "_run");
-        pipelineSpec.setDescription("Pipeline run from Camel S3 integration");
+        pipelineSpec.setDescription("Fraud Detection Pipeline run from Camel S3 Integration");
         RuntimeConfig runtimeConfig = new RuntimeConfig();
         // runtimeConfig.setParameters(Map.of("param1", "value1"));
         pipelineSpec.setRuntimeConfig(runtimeConfig);
