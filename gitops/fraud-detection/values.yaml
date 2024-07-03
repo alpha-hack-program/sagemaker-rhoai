@@ -1,3 +1,7 @@
+vcs:
+  uri: https://github.com/alpha-hack-program/sagemaker-rhoai.git
+  ref: main
+
 cicdApplication:
   repoURL: https://github.com/alpha-hack-program/sagemaker-rhoai.git
   path: gitops/fraud-detection-cicd
