@@ -16,8 +16,16 @@ Picture of the arquitecture and flow.
 
 The simplified flow of the demonstration is as follows:
 
-1. Train and save the model, scaler and test data as a zip file in an S3 bucket.
-2. 
+1. Go to [Sagemaker Studio Lab](https://studiolab.sagemaker.aws). Train and save the model, scaler and test data as a zip file (**evaluation kit**) in an S3 bucket (start).
+2. A Camel S3 integration will be triggered every time there's a new **evaluation kit**.
+3.
+4.
+5.
+6.
+7.
+8.
+9.
+
 
 
 # Preparation
@@ -106,7 +114,7 @@ We're going to use ArgoCD to do it. It should be pretty straight forward if:
 - Red Hat OpenShift AI is installed and configured
 - All the preparation steps have been executed
 
-To deploy the application run this command:
+To deploy the application run these command:
 
 > **NOTE:** Yo have to be logged in using `oc` and have permissions to create `Application` object in `openshift-gitops` namespace.
 
@@ -115,13 +123,10 @@ cd bootstrap
 ./deploy.sh
 ```
 
-## Deploy credentials
-
-This command creates a secret called `camel-s3-integration-creds` in `${DATA_SCIENCE_PROJECT_NAMESPACE}`:
+And also this command that creates a secret called `camel-s3-integration-creds` in `${DATA_SCIENCE_PROJECT_NAMESPACE}`:
 
 > NOTE: Don't forget that DATA_SCIENCE_PROJECT_NAMESPACE should be set in `./bootstrap/.env`.
 
 ```sh
-cd bootstrap
 ./setup-creds.sh
 ```
