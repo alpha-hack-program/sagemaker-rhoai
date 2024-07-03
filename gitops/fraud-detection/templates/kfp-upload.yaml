@@ -17,10 +17,10 @@ spec:
       default: github
     - name: GIT_REPO
       type: string
-      default: "{{ .Values.application.repoURL }}"
+      default: "{{ .Values.cicdApplication.repoURL }}"
     - name: GIT_REVISION
       type: string
-      default: "{{ .Values.application.targetRevision }}"
+      default: "{{ .Values.cicdApplication.targetRevision }}"
     - name: GIT_SSL_VERIFY
       type: string
       default: '{{ .Values.gitSslVerify }}'
