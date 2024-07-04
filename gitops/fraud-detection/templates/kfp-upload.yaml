@@ -36,9 +36,8 @@ spec:
         - name: sslVerify
           value: $(params.GIT_SSL_VERIFY)
       taskRef:
-        kind: Task
+        kind: ClusterTask
         name: git-clone
-        namespace: {{ .Values.dataScienceProjectNamespace }}
       workspaces:
         - name: output
           workspace: workspace-source
@@ -55,8 +54,9 @@ spec:
         - name: PIPELINES_PATH
           value: pipeline
       taskRef:
-        kind: ClusterTask
+        kind: Task
         name: kfp-upload
+        namespace: {{ .Values.dataScienceProjectNamespace }}
       workspaces:
         - name: source
           workspace: workspace-source

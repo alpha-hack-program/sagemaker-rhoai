@@ -1,14 +1,12 @@
 apiVersion: tekton.dev/v1beta1
 kind: Task
-namespace: {{ .Values.dataScienceProjectNamespace }}
 metadata:
   annotations:
     tekton.dev/displayName: Upload a Pipeline to a KFP cluster
     tekton.dev/pipelines.minVersion: '0.19'
     tekton.dev/tags: 'kfp'
-
   name: kfp-upload
-
+  namespace: {{ .Values.dataScienceProjectNamespace }}
   labels:
     app.kubernetes.io/version: '0.1'
     operator.tekton.dev/provider-type: redhat
