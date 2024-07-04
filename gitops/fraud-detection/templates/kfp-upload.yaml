@@ -56,7 +56,6 @@ spec:
       taskRef:
         kind: Task
         name: kfp-upload
-        namespace: {{ .Values.dataScienceProjectNamespace }}
       workspaces:
         - name: source
           workspace: workspace-source
