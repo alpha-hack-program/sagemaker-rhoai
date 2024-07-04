@@ -1,5 +1,6 @@
 apiVersion: tekton.dev/v1beta1
-kind: ClusterTask
+kind: Task
+namespace: {{ .Values.dataScienceProjectNamespace }}
 metadata:
   annotations:
     tekton.dev/displayName: Upload a Pipeline to a KFP cluster
