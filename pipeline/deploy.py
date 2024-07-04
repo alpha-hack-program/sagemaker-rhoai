@@ -240,16 +240,16 @@ def pipeline(accuracy_threshold: float = 0.95, deployment_name: str = "modelmesh
         evaluation_data_input_dataset=get_evaluation_kit_task.outputs["evaluation_data_output_dataset"],
         scaler_input_model=get_evaluation_kit_task.outputs["scaler_output_model"], 
         model_input_model=get_evaluation_kit_task.outputs["model_output_model"]
-    ).after(get_evaluation_kit_task).set_caching_options(False)
+    ).set_caching_options(False)
 
     # Parse the metrics and extract the accuracy
-    parse_metrics_task = parse_metrics(metrics_input=test_model_task.outputs["results_output_metrics"]).after(test_model_task).set_caching_options(False)
+    parse_metrics_task = parse_metrics(metrics_input=test_model_task.outputs["results_output_metrics"]).set_caching_options(False)
     accuracy = parse_metrics_task.outputs["accuracy_output"]
 
     # Use the parsed accuracy to decide if we should upload the model
     # Doc: https://www.kubeflow.org/docs/components/pipelines/user-guides/core-functions/execute-kfp-pipelines-locally/
     with dsl.If(accuracy >= accuracy_threshold):
-        upload_model_task = upload_model(input_model=get_evaluation_kit_task.outputs["model_output_model"]).after(test_model_task).set_caching_options(False)
+        upload_model_task = upload_model(input_model=get_evaluation_kit_task.outputs["model_output_model"]).after(parse_metrics_task).set_caching_options(False)
 
         # Setting environment variables for upload_model_task
         upload_model_task.set_env_variable(name="MODEL_S3_KEY", value="models/fraud/1/model.onnx")
